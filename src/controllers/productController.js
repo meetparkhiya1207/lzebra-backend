@@ -26,6 +26,7 @@ export const createProduct = async (req, res) => {
       images = req.files.map((file) => ({
         _id: uuidv4(),
         filename: file.filename,
+        url: `/uploads/${file.filename}`, // frontend can use this URL
       }));
     }
 
