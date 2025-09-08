@@ -5,9 +5,13 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// root-level uploads folder
+const uploadPath = path.join(__dirname, "../../uploads");
+console.log("uploadPathuploadPath",uploadPath);
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../uploads")); // 👈 uploads folder root ma banse
+    cb(null, uploadPath);  // ✅ src બહાર uploads folder
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
