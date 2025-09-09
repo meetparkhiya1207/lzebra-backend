@@ -38,6 +38,7 @@ export const createProduct = async (req, res) => {
       price,
       discountPrice,
       tags,
+      features,
       description,
     } = req.body;
 
@@ -52,6 +53,7 @@ export const createProduct = async (req, res) => {
       price,
       discountPrice,
       tags: tags ? JSON.parse(tags) : [],
+      features: features ? JSON.parse(features) : [],
       description,
       images,
     });
@@ -91,6 +93,7 @@ export const updateProduct = async (req, res) => {
       description,
       deletedImages,
       tags,
+      features,
     } = req.body;
 
     // Parse arrays safely
@@ -133,6 +136,7 @@ export const updateProduct = async (req, res) => {
     product.discountPrice = discountPrice || product.discountPrice;
     product.description = description || product.description;
     product.tags = tags ? JSON.parse(tags) : product.tags;
+    product.features = features ? JSON.parse(features) : product.features;
 
     // Save
     await product.save();
