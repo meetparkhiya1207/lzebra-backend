@@ -1,5 +1,5 @@
 import express from "express";
-import { createProduct, deleteProduct, getProducts, updateProduct } from "../controllers/productController.js";
+import { createProduct, deleteProduct, getProductById, getProducts, updateProduct } from "../controllers/productController.js";
 import upload from "../middlewares/upload.js"; // 👈 use multer
 
 const router = express.Router();
@@ -14,6 +14,7 @@ router.post("/update", upload.array("images", 5), updateProduct);
 
 router.delete("/:productId", deleteProduct);
 
+router.get("/:productId", getProductById);
 
 
 export default router;

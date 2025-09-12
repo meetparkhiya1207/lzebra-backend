@@ -3,6 +3,7 @@ import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import { fileURLToPath } from "url";
+import cloudinary from "../config/cloudinary.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,12 +23,23 @@ const generateProductId = async () => {
 export const createProduct = async (req, res) => {
   try {
     let images = [];
+
     if (req.files && req.files.length > 0) {
-      images = req.files.map((file) => ({
-        _id: uuidv4(),
-        filename: file.filename,
-        url: `/uploads/${file.filename}`, // frontend can use this URL
-      }));
+      images = await Promise.all(
+        req.files.map(async (file) => {
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: "products",
+            use_filename: true,
+            unique_filename: false,
+          });
+
+          return {
+            _id: uuidv4(),
+            filename: file.filename,
+            url: result.secure_url,
+          };
+        })
+      );
     }
 
     const {
@@ -37,6 +49,8 @@ export const createProduct = async (req, res) => {
       inStock,
       price,
       discountPrice,
+      shirtMeter,
+      paintMeter,
       tags,
       features,
       description,
@@ -52,6 +66,8 @@ export const createProduct = async (req, res) => {
       inStock,
       price,
       discountPrice,
+      shirtMeter,
+      paintMeter,
       tags: tags ? JSON.parse(tags) : [],
       features: features ? JSON.parse(features) : [],
       description,
@@ -72,7 +88,7 @@ export const createProduct = async (req, res) => {
 
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 }); // latest first
+    const products = await Product.find().sort({ createdAt: -1 });
     res.status(200).json(products);
   } catch (err) {
     console.error("❌ Error while fetching products:", err);
@@ -98,11 +114,23 @@ export const updateProduct = async (req, res) => {
 
     // Parse arrays safely
     const newImages = req.files
-      ? req.files.map((file) => ({
-          _id: file.filename, // using filename as id
-          filename: file.filename,
-        }))
+      ? await Promise.all(
+        req.files.map(async (file) => {
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: "products",
+            use_filename: true,
+            unique_filename: false,
+          });
+
+          return {
+            _id: uuidv4(),
+            filename: file.filename,
+            url: result.secure_url,
+          };
+        })
+      )
       : [];
+
 
     const parsedDeletedImages = deletedImages ? JSON.parse(deletedImages) : [];
 
@@ -112,11 +140,13 @@ export const updateProduct = async (req, res) => {
 
     // Delete selected images (from filesystem + db)
     if (parsedDeletedImages.length > 0) {
-      parsedDeletedImages.forEach((img) => {
+      parsedDeletedImages.forEach(async (img) => {
         const filePath = path.join(__dirname, "../uploads", String(img));
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
         }
+        const publicId = img.url.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(`products/${publicId}`);
       });
 
       product.images = product.images.filter(
@@ -164,11 +194,13 @@ export const deleteProduct = async (req, res) => {
 
     // Product images delete karo from uploads folder
     if (product.images && product.images.length > 0) {
-      product.images.forEach((img) => {
+      product.images.forEach(async (img) => {
         const filePath = path.join(__dirname, "../uploads", String(img));
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
         }
+        const publicId = img.url.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(`products/${publicId}`);
       });
     }
 
@@ -181,6 +213,26 @@ export const deleteProduct = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
+export const getProductById = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    const product = await Product.findOne({ product_id: productId });
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: product,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching product:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 
 
 

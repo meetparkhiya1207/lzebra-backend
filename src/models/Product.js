@@ -10,12 +10,15 @@ const productSchema = new mongoose.Schema(
     price: { type: Number, required: false },
     discountPrice: { type: Number },
     description: { type: String },
-    tags: [{ type: String }],   // array of string
-    features: [{ type: String }],   // array of string
+    shirtMeter: { type: String },
+    paintMeter: { type: String },
+    tags: [{ type: String }],
+    features: [{ type: String }],
     images: [
       {
         _id: { type: String, required: false },
         filename: { type: String, required: false },
+        url: { type: String, required: false },
       },
     ],
   },
