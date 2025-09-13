@@ -145,8 +145,6 @@ export const updateProduct = async (req, res) => {
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
         }
-        const publicId = img.url.split("/").pop().split(".")[0];
-        await cloudinary.uploader.destroy(`products/${publicId}`);
       });
 
       product.images = product.images.filter(
@@ -223,10 +221,7 @@ export const getProductById = async (req, res) => {
       return res.status(404).json({ success: false, message: "Product not found" });
     }
 
-    res.status(200).json({
-      success: true,
-      data: product,
-    });
+    res.status(200).json(product);
   } catch (error) {
     console.error("❌ Error fetching product:", error);
     res.status(500).json({ success: false, message: "Server error" });
