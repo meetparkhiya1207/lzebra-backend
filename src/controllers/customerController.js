@@ -51,26 +51,33 @@ const generateOtpEmail = (name, otp) => {
   };
 };
 
+const tempUsers = {};
+
 export const customerRegister = async (req, res) => {
   try {
     const { customer_firstName, customer_lastName, customer_email, customer_password, customer_confirmPassword, customer_agreeToTerms } = req.body;
 
-
-    // check already existsss
+    // Check if email already exists in main DB
     const existing = await Customer.findOne({ customer_email });
     if (existing) {
       return res.status(200).json({ success: false, message: "Email already registered" });
     }
 
-    // hash password
+    // Check if already in temp storage
+    if (tempUsers[customer_email]) {
+      return res.status(200).json({ success: false, message: "OTP already sent, please verify" });
+    }
+
+    // Hash password
     const hashedPassword = await bcrypt.hash(customer_password, 10);
     const hashedCPassword = await bcrypt.hash(customer_confirmPassword, 10);
 
-    // generate otp
+    // Generate OTP
     const otp = generateOTP();
     const otpExpires = Date.now() + 30 * 1000;
 
-    const customer = new Customer({
+    // Store in temporary object
+    tempUsers[customer_email] = {
       customer_firstName,
       customer_lastName,
       customer_email,
@@ -79,10 +86,9 @@ export const customerRegister = async (req, res) => {
       customer_agreeToTerms,
       otp,
       otpExpires,
-    });
-    await customer.save();
+    };
 
-    // send email via nodemailer
+    // Send OTP via email
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
@@ -91,12 +97,10 @@ export const customerRegister = async (req, res) => {
         user: process.env.ADMIN_EMAIL,
         pass: process.env.ADMIN_EMAIL_PASS,
       },
-      tls: {
-        rejectUnauthorized: false, // 👈 SSL verification bypass (fix for self-signed error)
-      },
+      tls: { rejectUnauthorized: false },
     });
 
-    const mailContent = generateOtpEmail((customer_firstName + " " + customer_lastName), otp);
+    const mailContent = generateOtpEmail(`${customer_firstName} ${customer_lastName}`, otp);
 
     await transporter.sendMail({
       from: `"Lzebra" <${process.env.ADMIN_EMAIL}>`,
@@ -109,6 +113,7 @@ export const customerRegister = async (req, res) => {
       success: true,
       message: "OTP sent to email. Please verify to complete registration",
     });
+
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -119,24 +124,35 @@ export const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    const customer = await Customer.findOne({ customer_email: email });
-    if (!customer) {
-      return res.status(400).json({ success: false, message: "User not found" });
+    const tempUser = tempUsers[email];
+    if (!tempUser) {
+      return res.status(400).json({ success: false, message: "No registration found or OTP expired" });
     }
 
-    if (customer.otp !== otp) {
+    if (tempUser.otp !== otp) {
       return res.status(400).json({ success: false, message: "Invalid OTP" });
     }
 
-    if (Date.now() > customer.otpExpires) {
+    if (Date.now() > tempUser.otpExpires) {
+      delete tempUsers[email];
       return res.status(400).json({ success: false, message: "OTP expired" });
     }
 
-    // OTP correct → mark customer as verified (optional)
-    customer.otp = null;
-    customer.otpExpires = null;
-    customer.isVerified = true;
-    await customer.save();
+    // Save to main DB
+    const newCustomer = new Customer({
+      customer_firstName: tempUser.customer_firstName,
+      customer_lastName: tempUser.customer_lastName,
+      customer_email: tempUser.customer_email,
+      customer_password: tempUser.customer_password,
+      customer_confirmPassword: tempUser.customer_confirmPassword,
+      customer_agreeToTerms: tempUser.customer_agreeToTerms,
+      isVerified: true,
+    });
+
+    await newCustomer.save();
+
+    // Remove from temporary storage
+    delete tempUsers[email];
 
     res.status(200).json({ success: true, message: "Registration successful!" });
   } catch (err) {
@@ -190,6 +206,7 @@ export const resendOtp = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
 export const customerLogin = async (req, res) => {
   const { customer_email, customer_password } = req.body;
 
