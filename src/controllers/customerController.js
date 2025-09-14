@@ -63,11 +63,6 @@ export const customerRegister = async (req, res) => {
       return res.status(200).json({ success: false, message: "Email already registered" });
     }
 
-    // Check if already in temp storage
-    if (tempUsers[customer_email]) {
-      return res.status(200).json({ success: false, message: "OTP already sent, please verify" });
-    }
-
     // Hash password
     const hashedPassword = await bcrypt.hash(customer_password, 10);
     const hashedCPassword = await bcrypt.hash(customer_confirmPassword, 10);
