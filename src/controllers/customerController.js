@@ -86,8 +86,8 @@ export const customerRegister = async (req, res) => {
     // Send OTP via email
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
+      port: process.env.EMAIL_PORT,
+      secure: process.env.EMAIL_TLS,
       auth: {
         user: process.env.ADMIN_EMAIL,
         pass: process.env.ADMIN_EMAIL_PASS,
