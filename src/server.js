@@ -17,7 +17,7 @@ const __dirname = path.dirname(__filename);
 
 app.use(
     cors({
-        origin: ["http://localhost:5173", "https://lzerbra-frontend.vercel.app", "http://localhost:3039", "https://lzebra-adminpanel.vercel.app"],
+        origin: ["http://localhost:5173", "https://lzerbra-frontend.vercel.app", "http://localhost:3039", "https://lzebra-adminpanel.vercel.app", "http://192.168.1.11:5173 "],
         methods: ["GET", "POST", "PUT", "DELETE"],
         allowedHeaders: ["Content-Type", "Authorization"],
         credentials: true,

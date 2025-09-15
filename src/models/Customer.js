@@ -11,6 +11,8 @@ const customerSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false },
     otp: { type: String },
     otpExpires: { type: Date },
+    resetPasswordToken: { type: String },
+    resetPasswordExpire: { type: Date },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
