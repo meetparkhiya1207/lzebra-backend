@@ -109,15 +109,18 @@ const generateResetLinkEmail = (name, resetUrl) => {
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: process.env.EMAIL_PORT,
-  secure: process.env.EMAIL_TLS,
+  port: 465,
+  secure: true,
   auth: {
-    user: process.env.ADMIN_EMAIL,
-    pass: process.env.ADMIN_EMAIL_PASS,
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
-  tls: { rejectUnauthorized: false },
+  logger: true,
+  debug: true,
+  tls: {
+    rejectUnauthorized: false,
+  }
 });
-
 const tempUsers = {};
 
 export const customerRegister = async (req, res) => {
@@ -317,7 +320,7 @@ export const resetPassword = async (req, res) => {
   try {
     // const { token } = req.params;
     const { token } = req.params;
-    const { password,  } = req.body;
+    const { password, } = req.body;
 
     const user = await Customer.findOne({
       resetPasswordToken: token,
