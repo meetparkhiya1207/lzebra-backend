@@ -112,8 +112,8 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: process.env.ADMIN_EMAIL,
-    pass: process.env.ADMIN_EMAIL_PASS,
+    user: "developermeet1207@gmail.com",
+    pass: "iayvhrgaibwoiptp",
   },
   logger: true,
   debug: true,
@@ -156,7 +156,7 @@ export const customerRegister = async (req, res) => {
     const mailContent = generateOtpEmail(`${customer_firstName} ${customer_lastName}`, otp);
 
     await transporter.sendMail({
-      from: `"Lzebra" <${process.env.ADMIN_EMAIL}>`,
+      from: `"Lzebra" <${"developermeet1207@gmail.com"}>`,
       to: customer_email,
       subject: mailContent.subject,
       html: mailContent.html,
@@ -237,8 +237,8 @@ export const resendOtp = async (req, res) => {
       port: 465,
       secure: true,
       auth: {
-        user: process.env.ADMIN_EMAIL,
-        pass: process.env.ADMIN_EMAIL_PASS,
+        user: "developermeet1207@gmail.com",
+        pass: "iayvhrgaibwoiptp",
       },
       tls: {
         rejectUnauthorized: false,
@@ -248,7 +248,7 @@ export const resendOtp = async (req, res) => {
     const mailContent = generateOtpEmail(customer.customer_firstName + " " + customer.customer_lastName, otp);
 
     await transporter.sendMail({
-      from: `"Lzebra" <${process.env.ADMIN_EMAIL}>`,
+      from: `"Lzebra" <${"developermeet1207@gmail.com"}>`,
       to: email,
       subject: mailContent.subject,
       html: mailContent.html,
@@ -301,7 +301,7 @@ export const forgotPassword = async (req, res) => {
     // Send Email
     const mailData = generateResetLinkEmail(user.customer_firstName, resetLink);
     await transporter.sendMail({
-      from: `"LZebra Security" <${process.env.ADMIN_EMAIL}>`,
+      from: `"LZebra Security" <${"developermeet1207@gmail.com"}>`,
       to: user.customer_email,
       subject: mailData.subject,
       html: mailData.html,
