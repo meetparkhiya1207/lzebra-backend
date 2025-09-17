@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import crypto from "crypto";
 import jwt from 'jsonwebtoken';
 import dotenv from "dotenv";
+import TempCustomer from "../models/TempCustomer.js";
 
 dotenv.config();
 // OTP generate
@@ -35,7 +36,7 @@ const generateOtpEmail = (name, otp) => {
             </div>
 
             <p style="font-size:14px; color:#5A3A1B; fontFamily:"'Poppins', sans-serif"">
-              ⚠️ This OTP is valid for <b>30 seconds</b>.  
+              ⚠️ This OTP is valid for <b>45 seconds</b>.  
               If you did not request this, please ignore this email.
             </p>
 
@@ -139,7 +140,7 @@ export const customerRegister = async (req, res) => {
 
     // Generate OTP
     const otp = generateOTP();
-    const otpExpires = Date.now() + 30 * 1000;
+    const otpExpires = Date.now() + 45 * 1000;
 
     // Store in temporary object
     tempUsers[customer_email] = {
@@ -153,6 +154,27 @@ export const customerRegister = async (req, res) => {
       otpExpires,
     };
 
+    let tempUser = await TempCustomer.findOne({ customer_email: customer_email });
+    if (tempUser) {
+      tempUser.password = hashedPassword;
+      tempUser.otp = otp;
+      tempUser.otpExpires = otpExpires;
+      await tempUser.save();
+    } else {
+      // Create new temp user
+      tempUser = new TempCustomer({
+        customer_firstName,
+        customer_lastName,
+        customer_email,
+        customer_password: hashedPassword,
+        customer_confirmPassword: hashedCPassword,
+        customer_agreeToTerms,
+        otp,
+        otpExpires,
+
+      });
+      await tempUser.save();
+    }
     const mailContent = generateOtpEmail(`${customer_firstName} ${customer_lastName}`, otp);
 
     await transporter.sendMail({
@@ -177,18 +199,17 @@ export const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    const tempUser = tempUsers[email];
+    const tempUser = await TempCustomer.findOne({ customer_email: email });
     if (!tempUser) {
-      return res.status(400).json({ success: false, message: "No registration found or OTP expired" });
+      return res.status(400).json({ message: "No registration found" });
     }
 
     if (tempUser.otp !== otp) {
-      return res.status(400).json({ success: false, message: "Invalid OTP" });
+      return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    if (Date.now() > tempUser.otpExpires) {
-      delete tempUsers[email];
-      return res.status(400).json({ success: false, message: "OTP expired" });
+    if (tempUser.otpExpires < Date.now()) {
+      return res.status(400).json({ message: "OTP expired" });
     }
 
     // Save to main DB
@@ -204,8 +225,7 @@ export const verifyOtp = async (req, res) => {
 
     await newCustomer.save();
 
-    // Remove from temporary storage
-    delete tempUsers[email];
+    await TempCustomer.deleteOne({ customer_email: email });
 
     res.status(200).json({ success: true, message: "Registration successful!" });
   } catch (err) {
@@ -217,19 +237,18 @@ export const resendOtp = async (req, res) => {
   try {
     const { email } = req.body;
 
-    // Find the customer
-    const customer = await Customer.findOne({ customer_email: email });
-    if (!customer) {
-      return res.status(404).json({ success: false, message: "Customer not found" });
-    }
+    // Find the customer    
+
+    const temp = await TempCustomer.findOne({ customer_email: email });
+    if (!temp) return res.status(400).json({ message: "No registration found111" });
 
     // Generate new OTP and expiry
     const otp = generateOTP();
     const otpExpires = Date.now() + 30 * 1000; // 30 seconds
 
-    customer.otp = otp;
-    customer.otpExpires = otpExpires;
-    await customer.save();
+    temp.otp = otp;
+    temp.otpExpires = otpExpires;
+    await temp.save();
 
     // Send OTP via email
     const transporter = nodemailer.createTransport({
@@ -244,8 +263,8 @@ export const resendOtp = async (req, res) => {
         rejectUnauthorized: false,
       },
     });
-
-    const mailContent = generateOtpEmail(customer.customer_firstName + " " + customer.customer_lastName, otp);
+    
+    const mailContent = generateOtpEmail(`${temp?.customer_firstName} ${temp?.customer_lastName}`, otp);
 
     await transporter.sendMail({
       from: `"Lzebra" <${"developermeet1207@gmail.com"}>`,
@@ -319,8 +338,8 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     // const { token } = req.params;
-    const { token } = req.params;
-    const { password, } = req.body;
+    // const { token } = req.params;
+    const { password, token} = req.body;
 
     const user = await Customer.findOne({
       resetPasswordToken: token,
