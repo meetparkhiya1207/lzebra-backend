@@ -7,7 +7,6 @@ const __dirname = path.dirname(__filename);
 
 // root-level uploads folder
 const uploadPath = path.join(__dirname, "../../uploads");
-console.log("uploadPathuploadPath",uploadPath);
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
