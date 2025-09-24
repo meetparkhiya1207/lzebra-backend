@@ -263,7 +263,7 @@ export const resendOtp = async (req, res) => {
         rejectUnauthorized: false,
       },
     });
-    
+
     const mailContent = generateOtpEmail(`${temp?.customer_firstName} ${temp?.customer_lastName}`, otp);
 
     await transporter.sendMail({
@@ -360,3 +360,14 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+
+// Get all customers (for testing)
+export const getAllCustomers = async (req, res) => {
+  try {
+    const customers = await Customer.find();
+    res.json(customers);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
