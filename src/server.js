@@ -5,6 +5,7 @@ import connectDB from "./config/db.js";
 import productRoutes from "./routes/productRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import clientRoutes from "./routes/clientRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import http from "http";
@@ -44,6 +45,10 @@ app.use("/api/products", productRoutes);
 app.use("/api/customer", customerRoutes);
 app.use("/api/order", orderRoutes);
 
+// Admin Panel
+app.use("/api/client", clientRoutes);
+
+
 // ✅ http server create કરો
 const server = http.createServer(app);
 
@@ -62,12 +67,10 @@ io.on("connection", (socket) => {
   connectedSockets.add(socket.id);
 
   io.emit("liveCount", connectedSockets.size);
-  console.log("New visitor:", socket.id, "Total:", connectedSockets.size);
 
   socket.on("disconnect", () => {
     connectedSockets.delete(socket.id);
     io.emit("liveCount", connectedSockets.size);
-    console.log("Visitor left:", socket.id, "Total:", connectedSockets.size);
   });
 });
 
