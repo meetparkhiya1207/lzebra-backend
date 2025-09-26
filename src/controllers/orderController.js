@@ -30,6 +30,20 @@ export const getOrder = async (req, res) => {
   }
 };
 
+export const getAllOrder = async (req, res) => {
+  try {
+    const orders = await Order.find().sort({ createdAts: -1 });
+    res.status(201).json({
+      success: true,
+      message: "Order get successfully!",
+      order: orders,
+    });
+  } catch (err) {
+    console.error("❌ Error while fetching orders:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 
 
 
