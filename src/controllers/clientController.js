@@ -7,7 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 export const registerClient = async (req, res) => {
   try {
-    const { companyName, email, password, confirmPassword, mobile } = req.body;
+    const { fristName, lastName, companyName, email, password, confirmPassword, mobile } = req.body;
 
     // check confirm password
     if (password !== confirmPassword) {
@@ -30,6 +30,8 @@ export const registerClient = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const client = new Client({
+      fristName,
+      lastName,
       companyName,
       email,
       mobile,
@@ -92,6 +94,8 @@ export const loginClient = async (req, res) => {
         client: {
           id: client._id,
           companyName: client.companyName,
+          fristName: client.fristName,
+          lastName: client.lastName,
           email: client.email,
           mobile: client.mobile,
         },
@@ -100,6 +104,20 @@ export const loginClient = async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Login Error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const getClients = async (req, res) => {
+  try {
+    const clients = await Client.find().sort({ createdAts: -1 });
+    res.status(200).json({
+      success: true,
+      message: "Get Client list successful",
+      data: clients,
+    });
+  } catch (err) {
+    console.error("❌ Get Client list Error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
