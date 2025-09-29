@@ -54,7 +54,7 @@ export const loginClient = async (req, res) => {
 
     // Check if mobile and password are provided
     if (!mobile || !password) {
-      return res.status(400).json({
+      return res.status(201).json({
         success: false,
         message: "Mobile number and password are required",
       });
@@ -63,7 +63,7 @@ export const loginClient = async (req, res) => {
     // Find client by mobile
     const client = await Client.findOne({ mobile });
     if (!client) {
-      return res.status(401).json({
+      return res.status(201).json({
         success: false,
         message: "Invalid mobile number or password",
       });
@@ -72,7 +72,7 @@ export const loginClient = async (req, res) => {
     // Compare password
     const isMatch = await bcrypt.compare(password, client.password);
     if (!isMatch) {
-      return res.status(401).json({
+      return res.status(201).json({
         success: false,
         message: "Invalid mobile number or password",
       });
